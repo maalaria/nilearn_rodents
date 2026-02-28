@@ -16,6 +16,10 @@ from nilearn.glm.first_level.hemodynamic_models import (
     spm_dispersion_derivative,
     spm_hrf,
     spm_time_derivative,
+    mouse_hrf,
+    mouse_time_derivative,
+    fusmouse_hrf,
+    fusmouse_time_derivative
 )
 
 __all__ = [
@@ -32,4 +36,8 @@ __all__ = [
     "spm_dispersion_derivative",
     "spm_hrf",
     "spm_time_derivative",
+    "mouse_hrf",
+    "mouse_time_derivative",
+    "fusmouse_hrf",
+    "fusmouse_time_derivative"
 ]

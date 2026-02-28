@@ -1,20 +1,18 @@
 """Hemodynamic response function (hrf) specification.
 
-Here we provide for SPM, Glover hrfs and finite impulse response (FIR) models.
+Here we provide for SPM, Glover hrfs and finite timpulse response (FIR) models.
 This module closely follows SPM implementation
+
+Author: Bertrand Thirion, 2011--2018
 """
 
 import warnings
 from collections.abc import Iterable
 
 import numpy as np
-from scipy.interpolate import interp1d
-from scipy.linalg import pinv
 from scipy.stats import gamma
 
-from nilearn._utils.docs import fill_doc
-from nilearn._utils.logger import find_stack_level
-from nilearn._utils.param_validation import check_params
+from nilearn._utils import fill_doc, rename_parameters
 
 
 def _gamma_difference_hrf(
@@ -84,7 +82,115 @@ def _gamma_difference_hrf(
     hrf /= hrf.sum()
     return hrf
 
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
+def mouse_hrf(
+    t_r, 
+    oversampling=50, 
+    time_length=32.0, 
+    onset=0.0, 
+    delay=3.85, 
+    undershoot=9.5,
+    dispersion=0.7,
+    u_dispersion=0.8,
+    ratio=0.2
+):
+    """Adapting SPM HRF to mouse after 10.3389/fnins.2023.1187328
 
+    Parameters
+    ----------
+    t_r : :obj:`float`
+        :term:`Repetition time<TR>`, in seconds (sampling period).
+
+    tr:
+
+        .. deprecated:: 0.11.0
+
+            Use ``t_r`` instead (see above).
+
+    oversampling : :obj:`int`, default=50
+        Temporal oversampling factor.
+
+    time_length : :obj:`float`, default=32.0
+        :term:`HRF` kernel length, in seconds.
+
+    onset : :obj:`float`, default=0.0
+        :term:`HRF` onset time, in seconds.
+
+    Returns
+    -------
+    hrf : array of shape(length / t_r * oversampling, dtype=float)
+         :term:`HRF` sampling on the oversampled time grid
+
+    """
+    return _gamma_difference_hrf(
+        t_r,
+        oversampling=oversampling,
+        time_length=time_length,
+        onset=onset,
+        delay=delay,
+        undershoot=undershoot,
+        dispersion=dispersion,
+        u_dispersion=u_dispersion,
+        ratio=ratio,
+        )
+
+
+
+
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
+def fusmouse_hrf(
+    t_r, 
+    oversampling=50, 
+    time_length=32.0, 
+    onset=0.0, 
+    delay=2, 
+    undershoot=9.5,
+    dispersion=0.7,
+    u_dispersion=0.8,
+    ratio=0 # sets undershoot gamma to 0
+):
+    """Adapting SPM HRF to mouse fUS after 10.3389/fnins.2023.1187328
+
+    Parameters
+    ----------
+    t_r : :obj:`float`
+        :term:`Repetition time<TR>`, in seconds (sampling period).
+
+    tr:
+
+        .. deprecated:: 0.11.0
+
+            Use ``t_r`` instead (see above).
+
+    oversampling : :obj:`int`, default=50
+        Temporal oversampling factor.
+
+    time_length : :obj:`float`, default=32.0
+        :term:`HRF` kernel length, in seconds.
+
+    onset : :obj:`float`, default=0.0
+        :term:`HRF` onset time, in seconds.
+
+    Returns
+    -------
+    hrf : array of shape(length / t_r * oversampling, dtype=float)
+         :term:`HRF` sampling on the oversampled time grid
+
+    """
+    return _gamma_difference_hrf(
+        t_r,
+        oversampling=oversampling,
+        time_length=time_length,
+        onset=onset,
+        delay=delay,
+        undershoot=undershoot,
+        dispersion=dispersion,
+        u_dispersion=u_dispersion,
+        ratio=ratio,
+        )
+
+
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
 def spm_hrf(t_r, oversampling=50, time_length=32.0, onset=0.0):
     """Implement the :term:`SPM` :term:`HRF` model.
 
@@ -95,7 +201,7 @@ def spm_hrf(t_r, oversampling=50, time_length=32.0, onset=0.0):
 
     tr:
 
-        .. nilearn_deprecated:: 0.11.0
+        .. deprecated:: 0.11.0
 
             Use ``t_r`` instead (see above).
 
@@ -117,6 +223,7 @@ def spm_hrf(t_r, oversampling=50, time_length=32.0, onset=0.0):
     return _gamma_difference_hrf(t_r, oversampling, time_length, onset)
 
 
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
 def glover_hrf(t_r, oversampling=50, time_length=32.0, onset=0.0):
     """Implement the Glover :term:`HRF` model.
 
@@ -127,7 +234,7 @@ def glover_hrf(t_r, oversampling=50, time_length=32.0, onset=0.0):
 
     tr:
 
-        .. nilearn_deprecated:: 0.11.0
+        .. deprecated:: 0.11.0
 
             Use ``t_r`` instead (see above).
 
@@ -196,6 +303,87 @@ def _generic_time_derivative(
     )
 
 
+
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
+def mouse_time_derivative(t_r, oversampling=50, time_length=32.0, onset=0.0):
+    """Implement the :term:`SPM` time derivative :term:`HRF` (dhrf) model.
+
+    Parameters
+    ----------
+    t_r : :obj:`float`
+        :term:`Repetition time<TR>`, in seconds (sampling period).
+
+    tr:
+
+        .. deprecated:: 0.11.0
+
+            Use ``t_r`` instead (see above).
+
+    oversampling : :obj:`int`, default=50
+        Temporal oversampling factor.
+
+    time_length : :obj:`float`, default=32.0
+        :term:`HRF` kernel length, in seconds.
+
+    onset : :obj:`float`, default=0.0
+        Onset of the response in seconds.
+
+    Returns
+    -------
+    dhrf : array of shape(length / t_r, dtype=float)
+          dhrf sampling on the provided grid
+
+    """
+    return _generic_time_derivative(
+        mouse_hrf,
+        t_r=t_r,
+        oversampling=oversampling,
+        time_length=time_length,
+        onset=onset,
+    )
+
+
+
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
+def fusmouse_time_derivative(t_r, oversampling=50, time_length=32.0, onset=0.0):
+    """Implement the :term:`SPM` time derivative :term:`HRF` (dhrf) model.
+
+    Parameters
+    ----------
+    t_r : :obj:`float`
+        :term:`Repetition time<TR>`, in seconds (sampling period).
+
+    tr:
+
+        .. deprecated:: 0.11.0
+
+            Use ``t_r`` instead (see above).
+
+    oversampling : :obj:`int`, default=50
+        Temporal oversampling factor.
+
+    time_length : :obj:`float`, default=32.0
+        :term:`HRF` kernel length, in seconds.
+
+    onset : :obj:`float`, default=0.0
+        Onset of the response in seconds.
+
+    Returns
+    -------
+    dhrf : array of shape(length / t_r, dtype=float)
+          dhrf sampling on the provided grid
+
+    """
+    return _generic_time_derivative(
+        fusmouse_hrf,
+        t_r=t_r,
+        oversampling=oversampling,
+        time_length=time_length,
+        onset=onset,
+    )
+
+
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
 def spm_time_derivative(t_r, oversampling=50, time_length=32.0, onset=0.0):
     """Implement the :term:`SPM` time derivative :term:`HRF` (dhrf) model.
 
@@ -206,7 +394,7 @@ def spm_time_derivative(t_r, oversampling=50, time_length=32.0, onset=0.0):
 
     tr:
 
-        .. nilearn_deprecated:: 0.11.0
+        .. deprecated:: 0.11.0
 
             Use ``t_r`` instead (see above).
 
@@ -234,6 +422,7 @@ def spm_time_derivative(t_r, oversampling=50, time_length=32.0, onset=0.0):
     )
 
 
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
 def glover_time_derivative(t_r, oversampling=50, time_length=32.0, onset=0.0):
     """Implement the Glover time derivative :term:`HRF` (dhrf) model.
 
@@ -244,7 +433,7 @@ def glover_time_derivative(t_r, oversampling=50, time_length=32.0, onset=0.0):
 
     tr:
 
-        .. nilearn_deprecated:: 0.11.0
+        .. deprecated:: 0.11.0
 
             Use ``t_r`` instead (see above).
 
@@ -314,6 +503,9 @@ def _generic_dispersion_derivative(
     )
 
 
+
+
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
 def spm_dispersion_derivative(
     t_r, oversampling=50, time_length=32.0, onset=0.0
 ):
@@ -326,7 +518,7 @@ def spm_dispersion_derivative(
 
     tr:
 
-        .. nilearn_deprecated:: 0.11.0
+        .. deprecated:: 0.11.0
 
             Use ``t_r`` instead (see above).
 
@@ -350,6 +542,7 @@ def spm_dispersion_derivative(
     )
 
 
+@rename_parameters({"tr": "t_r"}, end_version="0.13.0")
 def glover_dispersion_derivative(
     t_r, oversampling=50, time_length=32.0, onset=0.0
 ):
@@ -365,7 +558,7 @@ def glover_dispersion_derivative(
 
     tr:
 
-        .. nilearn_deprecated:: 0.11.0
+        .. deprecated:: 0.11.0
 
             Use ``t_r`` instead (see above).
 
@@ -445,7 +638,6 @@ def _sample_condition(
                 " experiment and are thus not considered in the model."
             ),
             UserWarning,
-            stacklevel=find_stack_level(),
         )
 
     # Set up the regressor timecourse
@@ -454,7 +646,7 @@ def _sample_condition(
     t_onset = np.minimum(
         np.searchsorted(frame_times_high_res, onsets), tmax - 1
     )
-    for t, v in zip(t_onset, values, strict=False):
+    for t, v in zip(t_onset, values):
         regressor[t] += v
     t_offset = np.minimum(
         np.searchsorted(frame_times_high_res, onsets + durations), tmax - 1
@@ -465,7 +657,7 @@ def _sample_condition(
         if t < (tmax - 1) and t == t_onset[i]:
             t_offset[i] += 1
 
-    for t, v in zip(t_offset, values, strict=False):
+    for t, v in zip(t_offset, values):
         regressor[t] -= v
     regressor = np.cumsum(regressor)
 
@@ -508,6 +700,8 @@ def _resample_regressor(hr_regressor, frame_times_high_res, frame_times):
          The resampled regressor.
 
     """
+    from scipy.interpolate import interp1d
+
     f = interp1d(frame_times_high_res, hr_regressor)
     return f(frame_times).T
 
@@ -533,6 +727,8 @@ def orthogonalize(X):
     if X.size == X.shape[0]:
         return X
 
+    from scipy.linalg import pinv
+
     for i in range(1, X.shape[1]):
         X[:, i] -= np.dot(np.dot(X[:, i], X[:, :i]), pinv(X[:, :i]))
 
@@ -553,7 +749,7 @@ def _regressor_names(con_name, hrf_model, fir_delays=None):
     con_name : :obj:`str`
         identifier of the condition
     %(hrf_model)s
-    fir_delays : 1D array_like or None, default=None
+    fir_delays : 1D array_like, optional
         Delays (in scans) used in case of an FIR model
 
     Returns
@@ -562,14 +758,13 @@ def _regressor_names(con_name, hrf_model, fir_delays=None):
         regressor names
 
     """
-    check_params(locals())
     # Default value
     names = [con_name]
 
     # Handle strings
-    if hrf_model in ["glover", "spm"]:
+    if hrf_model in ["glover", "spm", "mouse", "fusmouse"]:
         names = [con_name]
-    elif hrf_model in ["glover + derivative", "spm + derivative"]:
+    elif hrf_model in ["glover + derivative", "spm + derivative", "mouse + derivative", "fusmouse + derivative"]:
         names = [con_name, f"{con_name}_derivative"]
     elif hrf_model in [
         "spm + derivative + dispersion",
@@ -600,7 +795,8 @@ def _hrf_kernel(hrf_model, t_r, oversampling=50, fir_delays=None):
 
     Parameters
     ----------
-    %(hrf_model)s
+    hrf_model : :obj:`str`, function, list of functions, or None,
+        HRF model to be used.
 
     t_r : :obj:`float`
         the repetition time in seconds
@@ -608,7 +804,7 @@ def _hrf_kernel(hrf_model, t_r, oversampling=50, fir_delays=None):
     oversampling : :obj:`int`, default=50
         Temporal oversampling factor to have a smooth hrf.
 
-    fir_delays : 1D-array-like or None, default=None
+    fir_delays : 1D-array-like, optional
         List of delays (in scans) for finite impulse response models.
 
     Returns
@@ -617,7 +813,6 @@ def _hrf_kernel(hrf_model, t_r, oversampling=50, fir_delays=None):
         Samples of the hrf (the number depends on the hrf_model used).
 
     """
-    check_params(locals())
     acceptable_hrfs = [
         "spm",
         "spm + derivative",
@@ -626,6 +821,10 @@ def _hrf_kernel(hrf_model, t_r, oversampling=50, fir_delays=None):
         "glover",
         "glover + derivative",
         "glover + derivative + dispersion",
+        "mouse",
+        "mouse + derivative",
+        "fusmouse",
+        "fusmouse + derivative",
         None,
     ]
     error_msg = (
@@ -658,6 +857,22 @@ def _hrf_kernel(hrf_model, t_r, oversampling=50, fir_delays=None):
             glover_time_derivative(t_r, oversampling),
             glover_dispersion_derivative(t_r, oversampling),
         ]
+    ###############    
+    elif hrf_model == "mouse":
+        hkernel = [mouse_hrf(t_r, oversampling)]
+    elif hrf_model == "mouse + derivative":
+        hkernel = [
+            mouse_hrf(t_r, oversampling),
+            mouse_time_derivative(t_r, oversampling),
+        ]
+    elif hrf_model == "fusmouse":
+        hkernel = [fusmouse_hrf(t_r, oversampling)]
+    elif hrf_model == "fusmouse + derivative":
+        hkernel = [
+            fusmouse_hrf(t_r, oversampling),
+            fusmouse_time_derivative(t_r, oversampling),
+        ]
+    ##############    
     elif hrf_model == "fir":
         hkernel = [
             np.hstack(
@@ -671,15 +886,15 @@ def _hrf_kernel(hrf_model, t_r, oversampling=50, fir_delays=None):
     elif callable(hrf_model):
         try:
             hkernel = [hrf_model(t_r, oversampling)]
-        except TypeError as e:
-            raise ValueError(error_msg) from e
+        except TypeError:
+            raise ValueError(error_msg)
     elif isinstance(hrf_model, Iterable) and all(
         callable(_) for _ in hrf_model
     ):
         try:
             hkernel = [model(t_r, oversampling) for model in hrf_model]
-        except TypeError as e:
-            raise ValueError(error_msg) from e
+        except TypeError:
+            raise ValueError(error_msg)
     elif hrf_model is None:
         hkernel = [np.hstack((1, np.zeros(oversampling - 1)))]
     else:
@@ -734,7 +949,6 @@ def compute_regressor(
         Corresponding regressor names.
 
     """
-    check_params(locals())
     # fir_delays should be integers
     if fir_delays is not None:
         fir_delays = [int(x) for x in fir_delays]
@@ -789,4 +1003,4 @@ def _calculate_tr(frame_times):
     :obj:`float`
         repetition time
     """
-    return float(np.min(np.diff(frame_times)))
+    return np.min(np.diff(frame_times))

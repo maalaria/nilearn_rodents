@@ -296,3 +296,13 @@ def is_gil_enabled() -> bool:
 
 def is_sphinx_build() -> bool:
     return any(module.startswith("sphinx.") for module in sys.modules)
+
+
+# TODO: This can be removed once MPL 3.5 is the min
+def _constrained_layout_kwargs():
+    import matplotlib
+
+    if compare_version(matplotlib.__version__, ">=", "3.5"):
+        return {"layout": "constrained"}
+    else:
+        return {"constrained_layout": True}
