@@ -1081,7 +1081,7 @@ class FirstLevelModel(BaseGLM):
             keyed by the type of image.
 
         """
-        check_is_fitted(self)
+        # check_is_fitted(self)
 
         if isinstance(contrast_def, (np.ndarray, str)):
             con_vals = [contrast_def]
