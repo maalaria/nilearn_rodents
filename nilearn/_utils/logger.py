@@ -107,9 +107,12 @@ def log(
         func_name = f"{object_self.__class__.__name__}.{func_name}"
 
     if _has_rich():
-        print(f"[blue]\\[{func_name}][/blue] {escape(msg)}")
+        # print(f"[blue]\\[{func_name}][/blue] {escape(msg)}")
+        print(f"[blue]\\[{func_name}][/blue] {escape(msg)}", flush=True)
     else:
-        print(f"[{func_name}] {msg}")
+        # print(f"[{func_name}] {msg}")
+        print(f"[{func_name}] {msg}", flush=True)
+
 
     if with_traceback:
         traceback.print_exc()
